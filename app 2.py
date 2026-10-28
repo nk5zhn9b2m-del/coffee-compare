@@ -4,6 +4,15 @@ from pathlib import Path
 
 import streamlit as st
 from core import BRANDS, load_data, search
+from recommendation import (
+    BUDGETS,
+    CAFFEINE_LABEL,
+    CATEGORY_LABEL,
+    MENU,
+    SIZE_LABEL,
+    SURVEY,
+    recommend,
+)
 
 
 st.set_page_config(
@@ -401,6 +410,81 @@ else:
             ):
                 with col:
                     render_card(row, cheapest)
+
+with st.expander("음료 추천", expanded=False):
+    st.caption(
+        "원하는 항목만 선택해도 추천받을 수 있어요. "
+        "메뉴 정보와 가격은 추천 데이터 기준입니다."
+    )
+
+    answers = {}
+    with st.form("drink_recommendation"):
+        for section_key, section in SURVEY.items():
+            st.markdown("**" + section["title"] + "**")
+            answers[section_key] = {}
+
+            for question in section["questions"]:
+                labels = [option[1] for option in question["options"]]
+                values_by_label = {label: value for value, label in question["options"]}
+                widget_key = "recommend_answer_" + question["id"]
+
+                if question["multi"]:
+                    picked = st.multiselect(
+                        question["text"],
+                        labels,
+                        key=widget_key,
+                        placeholder="선택 안 해도 돼요",
+                    )
+                    if picked:
+                        answers[section_key][question["id"]] = [
+                            values_by_label[label] for label in picked
+                        ]
+                else:
+                    picked = st.radio(
+                        question["text"],
+                        labels,
+                        index=None,
+                        key=widget_key,
+                        horizontal=True,
+                    )
+                    if picked is not None:
+                        answers[section_key][question["id"]] = values_by_label[picked]
+
+        submitted = st.form_submit_button("추천받기", type="primary")
+
+    def reset_recommendation_answers():
+        for section in SURVEY.values():
+            for question in section["questions"]:
+                st.session_state.pop("recommend_answer_" + question["id"], None)
+
+    st.button("초기화", on_click=reset_recommendation_answers)
+
+    if submitted:
+        recommendation = recommend(MENU, answers, top_n=5)
+        if recommendation["mode"] == "popular":
+            st.info("선택한 항목이 없어 인기 메뉴를 보여드려요.")
+
+        for result in recommendation["results"]:
+            item = result["item"]
+            temperatures = "/".join(
+                "차가움" if temperature == "ice" else "따뜻함"
+                for temperature in item["temps"]
+            )
+            sizes = "/".join(SIZE_LABEL[size] for size in item["sizes"])
+            details = [
+                CATEGORY_LABEL[item["category"]],
+                f'{item["price"]:,}원',
+                temperatures,
+                "카페인 " + CAFFEINE_LABEL[item["caffeine"]],
+                sizes + " 사이즈",
+            ]
+            score = "" if result["score"] is None else f' · {result["score"]:.1f}점'
+            st.markdown(f'**{item["name"]}**{score}')
+            st.caption(" · ".join(details))
+            if result["reasons"]:
+                st.success("추천 이유: " + ", ".join(result["reasons"]))
+            if result["unmet"]:
+                st.warning("완화된 조건: " + ", ".join(result["unmet"]))
 
 if warnings:
     with st.expander(

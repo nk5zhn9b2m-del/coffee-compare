@@ -1,0 +1,334 @@
+"""음료 검색·추천 (Streamlit 한 파일 버전).  실행:  streamlit run streamlit_app.py"""
+from typing import Any, Dict, List, Optional
+
+MENU = [
+    {"id": 1, "name": "아메리카노", "category": "coffee", "flavors": ["nutty"], "sweetness": 0,
+     "temps": ["ice", "hot"], "caffeine": "high", "price": 3000, "sizes": ["medium", "large"],
+     "activities": ["study", "work"], "feelings": ["tired", "energetic"], "popularity": 10},
+    {"id": 2, "name": "카페라떼", "category": "coffee", "flavors": ["nutty", "sweet"], "sweetness": 1,
+     "temps": ["ice", "hot"], "caffeine": "high", "price": 4000, "sizes": ["medium", "large"],
+     "activities": ["study", "relax", "dessert"], "feelings": ["calm", "tired"], "popularity": 9},
+    {"id": 3, "name": "바닐라라떼", "category": "coffee", "flavors": ["sweet"], "sweetness": 2,
+     "temps": ["ice", "hot"], "caffeine": "high", "price": 4800, "sizes": ["medium", "large"],
+     "activities": ["relax", "dessert"], "feelings": ["calm", "refresh"], "popularity": 8},
+    {"id": 4, "name": "카라멜마끼아또", "category": "coffee", "flavors": ["sweet"], "sweetness": 3,
+     "temps": ["ice", "hot"], "caffeine": "high", "price": 5200, "sizes": ["medium", "large"],
+     "activities": ["dessert", "relax"], "feelings": ["refresh", "tired"], "popularity": 8},
+    {"id": 5, "name": "콜드브루", "category": "coffee", "flavors": ["nutty"], "sweetness": 0,
+     "temps": ["ice"], "caffeine": "high", "price": 4500, "sizes": ["medium", "large"],
+     "activities": ["work", "study"], "feelings": ["tired", "energetic"], "popularity": 7},
+    {"id": 6, "name": "초코라떼", "category": "non_coffee", "flavors": ["sweet"], "sweetness": 3,
+     "temps": ["ice", "hot"], "caffeine": "low", "price": 4500, "sizes": ["medium", "large"],
+     "activities": ["dessert", "relax"], "feelings": ["calm", "refresh"], "popularity": 8},
+    {"id": 7, "name": "곡물라떼", "category": "non_coffee", "flavors": ["nutty", "sweet"], "sweetness": 1,
+     "temps": ["ice", "hot"], "caffeine": "none", "price": 4800, "sizes": ["medium", "large"],
+     "activities": ["relax", "new"], "feelings": ["calm"], "popularity": 6},
+    {"id": 8, "name": "딸기라떼", "category": "non_coffee", "flavors": ["sweet", "sour"], "sweetness": 3,
+     "temps": ["ice"], "caffeine": "none", "price": 5500, "sizes": ["medium", "large"],
+     "activities": ["dessert", "new", "relax"], "feelings": ["refresh", "energetic"], "popularity": 9},
+    {"id": 9, "name": "고구마라떼", "category": "non_coffee", "flavors": ["nutty", "sweet"], "sweetness": 2,
+     "temps": ["hot", "ice"], "caffeine": "none", "price": 5000, "sizes": ["medium", "large"],
+     "activities": ["relax", "dessert"], "feelings": ["calm"], "popularity": 5},
+    {"id": 10, "name": "얼그레이", "category": "tea", "flavors": ["sweet"], "sweetness": 0,
+     "temps": ["hot", "ice"], "caffeine": "low", "price": 3500, "sizes": ["small", "medium"],
+     "activities": ["relax", "study"], "feelings": ["calm"], "popularity": 6},
+    {"id": 11, "name": "캐모마일", "category": "tea", "flavors": ["sweet"], "sweetness": 0,
+     "temps": ["hot"], "caffeine": "none", "price": 3500, "sizes": ["small", "medium"],
+     "activities": ["relax"], "feelings": ["calm", "tired"], "popularity": 5},
+    {"id": 12, "name": "유자차", "category": "tea", "flavors": ["sweet", "sour"], "sweetness": 2,
+     "temps": ["hot", "ice"], "caffeine": "none", "price": 4000, "sizes": ["medium", "large"],
+     "activities": ["relax", "dessert"], "feelings": ["calm", "refresh"], "popularity": 7},
+    {"id": 13, "name": "페퍼민트", "category": "tea", "flavors": ["sour"], "sweetness": 0,
+     "temps": ["hot", "ice"], "caffeine": "none", "price": 3500, "sizes": ["small", "medium"],
+     "activities": ["study", "relax"], "feelings": ["refresh", "energetic"], "popularity": 4},
+    {"id": 14, "name": "레몬에이드", "category": "ade_soda", "flavors": ["sour", "sweet"], "sweetness": 2,
+     "temps": ["ice"], "caffeine": "none", "price": 4500, "sizes": ["medium", "large"],
+     "activities": ["relax", "new", "dessert"], "feelings": ["refresh", "energetic"], "popularity": 9},
+    {"id": 15, "name": "자몽에이드", "category": "ade_soda", "flavors": ["sour"], "sweetness": 2,
+     "temps": ["ice"], "caffeine": "none", "price": 5000, "sizes": ["medium", "large"],
+     "activities": ["relax", "new"], "feelings": ["refresh", "energetic"], "popularity": 8},
+    {"id": 16, "name": "청포도에이드", "category": "ade_soda", "flavors": ["sweet", "sour"], "sweetness": 3,
+     "temps": ["ice"], "caffeine": "none", "price": 5000, "sizes": ["medium", "large"],
+     "activities": ["dessert", "new"], "feelings": ["refresh", "energetic"], "popularity": 6},
+    {"id": 17, "name": "콜라/사이다", "category": "ade_soda", "flavors": ["sweet"], "sweetness": 3,
+     "temps": ["ice"], "caffeine": "none", "price": 2500, "sizes": ["small", "medium"],
+     "activities": ["dessert"], "feelings": ["energetic", "refresh"], "popularity": 4},
+    {"id": 18, "name": "에스프레소 토닉", "category": "ade_soda", "flavors": ["sour", "nutty"], "sweetness": 1,
+     "temps": ["ice"], "caffeine": "high", "price": 5500, "sizes": ["medium", "large"],
+     "activities": ["new", "work"], "feelings": ["refresh", "tired", "energetic"], "popularity": 6},
+    {"id": 19, "name": "아인슈페너", "category": "coffee", "flavors": ["nutty", "sweet"], "sweetness": 2,
+     "temps": ["ice", "hot"], "caffeine": "high", "price": 6200, "sizes": ["medium", "large"],
+     "activities": ["new", "dessert", "relax"], "feelings": ["refresh", "calm"], "popularity": 5},
+    {"id": 20, "name": "대용량 아이스티", "category": "tea", "flavors": ["sweet", "sour"], "sweetness": 2,
+     "temps": ["ice"], "caffeine": "low", "price": 2800, "sizes": ["large"],
+     "activities": ["study", "relax"], "feelings": ["refresh", "energetic"], "popularity": 6},
+]
+
+
+SURVEY = {
+    "taste": {
+        "title": "취향 바탕 추천",
+        "questions": [
+            {"id": "category", "text": "지금 어떤 종류의 음료를 마시고 싶나요?", "multi": True,
+             "options": [("coffee", "커피"), ("non_coffee", "논커피"), ("tea", "차"), ("ade_soda", "에이드 탄산음료")]},
+            {"id": "flavor", "text": "어떤 맛을 선호하나요?", "multi": True,
+             "options": [("sweet", "달콤한 맛"), ("sour", "상큼한 맛"), ("nutty", "고소한 맛")]},
+            {"id": "sweetness", "text": "단맛은 어느 정도가 좋나요?", "multi": False,
+             "options": [(0, "단맛 없이"), (1, "은은하게 달콤하게"), (2, "적당히 달콤하게"), (3, "많이 달콤하게")]},
+            {"id": "temperature", "text": "어떤 온도의 음료를 원하나요?", "multi": False,
+             "options": [("ice", "차가운 음료"), ("hot", "따뜻한 음료"), ("any", "둘 다 괜찮음")]},
+        ],
+    },
+    "mood": {
+        "title": "기분 바탕 추천",
+        "questions": [
+            {"id": "activity", "text": "어떤 일을 하고 있나요?", "multi": False,
+             "options": [("study", "공부하거나 과제하기"), ("relax", "휴식하고 기분 전환하기"),
+                         ("work", "일하거나 집중하기"), ("dessert", "디저트와 함께 즐기기"),
+                         ("new", "새로운 메뉴 경험하기")]},
+            {"id": "feeling", "text": "지금 기분은 어떤가요?", "multi": False,
+             "options": [("tired", "피곤하고 졸림"), ("refresh", "기분전환이 필요함"),
+                         ("energetic", "상쾌하고 활기참"), ("calm", "편안하고 차분함")]},
+            {"id": "caffeine", "text": "카페인이 필요한가요?", "multi": False,
+             "options": [("high", "잠을 깨거나 집중하고 싶음"), ("low", "카페인이 조금 있으면 좋음"),
+                         ("none", "카페인이 없는 음료를 원함"), ("any", "상관 없음")]},
+        ],
+    },
+    "budget": {
+        "title": "구매 조건 바탕 추천",
+        "questions": [
+            {"id": "price", "text": "얼마의 음료를 원하나요?", "multi": False,
+             "options": [("under_3000", "3,000원 이하"), ("3000_4500", "3,000~4,500원"),
+                         ("4500_6000", "4,500~6,000원"), ("over_6000", "6,000원 이상")]},
+            {"id": "size", "text": "음료의 양은 어느 정도가 좋나요?", "multi": False,
+             "options": [("small", "작은 사이즈"), ("medium", "보통 사이즈"),
+                         ("large", "큰 사이즈"), ("any", "상관없음")]},
+        ],
+    },
+}
+
+
+CATEGORY_LABEL = {"coffee": "커피", "non_coffee": "논커피", "tea": "차", "ade_soda": "에이드 탄산음료"}
+
+
+def search_menu(menu: List[Dict], query: str) -> List[Dict]:
+    q = (query or "").strip().lower().replace(" ", "")
+    if not q:
+        return list(menu)
+    out = []
+    for item in menu:
+        hay = (item["name"] + CATEGORY_LABEL.get(item["category"], "")).lower().replace(" ", "")
+        if q in hay:
+            out.append(item)
+    return out
+
+from typing import Any, Dict, List, Optional
+
+PRICE_RANGES = {
+    "under_3000": (0, 3000),
+    "3000_4500": (3000, 4500),
+    "4500_6000": (4500, 6000),
+    "over_6000": (6000, 10**9),
+}
+CAFFEINE_RANK = {"none": 0, "low": 1, "high": 2}
+
+# 기분 → 선호 카페인/카테고리 보정
+FEELING_CAFFEINE_HINT = {"tired": "high", "calm": "low"}
+
+# (질문 키: 가중치)  — 값이 클수록 점수에 많이 반영
+WEIGHTS = {
+    "category": 3.0, "flavor": 2.0, "sweetness": 2.0, "temperature": 2.0,
+    "activity": 1.5, "feeling": 1.5, "caffeine": 3.0,
+    "price": 3.0, "size": 1.5,
+}
+STRICT = {"category", "temperature", "caffeine", "price", "size"}
+
+
+def _as_list(v: Any) -> List[Any]:
+    if v is None or v == "" or v == []:
+        return []
+    return list(v) if isinstance(v, (list, tuple, set)) else [v]
+
+
+def _is_answered(key: str, v: Any) -> bool:
+    vals = _as_list(v)
+    if not vals:
+        return False
+    # '상관없음/둘 다 괜찮음' 은 제약 없음 → 건너뜀
+    if key in ("temperature", "caffeine", "size") and vals == ["any"]:
+        return False
+    return True
+
+
+def _price_in_range(price: int, code: str) -> float:
+    lo, hi = PRICE_RANGES[code]
+    if lo <= price <= hi:
+        return 1.0
+    gap = (lo - price) if price < lo else (price - hi)
+    return max(0.0, 1.0 - gap / 3000)  # 범위 밖이면 거리만큼 감점
+
+
+def _score_one(key: str, v: Any, item: Dict) -> float:
+    """0.0 ~ 1.0"""
+    vals = _as_list(v)
+    if key == "category":
+        return 1.0 if item["category"] in vals else 0.0
+    if key == "flavor":
+        return len(set(vals) & set(item["flavors"])) / len(set(vals))
+    if key == "sweetness":
+        return max(0.0, 1.0 - abs(int(vals[0]) - item["sweetness"]) / 3)
+    if key == "temperature":
+        return 1.0 if vals[0] in item["temps"] else 0.0
+    if key == "activity":
+        return 1.0 if vals[0] in item["activities"] else 0.0
+    if key == "feeling":
+        s = 1.0 if vals[0] in item["feelings"] else 0.0
+        hint = FEELING_CAFFEINE_HINT.get(vals[0])
+        if hint and item["caffeine"] == hint:
+            s = min(1.0, s + 0.3)
+        return s
+    if key == "caffeine":
+        want = vals[0]
+        if want == "none":
+            return 1.0 if item["caffeine"] == "none" else 0.0
+        if want == "high":
+            return {"high": 1.0, "low": 0.4, "none": 0.0}[item["caffeine"]]
+        if want == "low":
+            return {"low": 1.0, "high": 0.5, "none": 0.3}[item["caffeine"]]
+    if key == "price":
+        return _price_in_range(item["price"], vals[0])
+    if key == "size":
+        return 1.0 if vals[0] in item["sizes"] else 0.0
+    return 0.0
+
+
+def _flatten(answers: Dict[str, Optional[Dict[str, Any]]]) -> Dict[str, Any]:
+    flat: Dict[str, Any] = {}
+    for section in ("taste", "mood", "budget"):
+        for k, v in (answers.get(section) or {}).items():
+            if k in WEIGHTS and _is_answered(k, v):
+                flat[k] = v
+    return flat
+
+
+def recommend(menu: List[Dict], answers: Dict[str, Optional[Dict[str, Any]]], top_n: int = 5) -> Dict[str, Any]:
+    """answers 예시 (모든 섹션/문항 선택사항):
+        {"taste": {"category": ["coffee"], "sweetness": 1},
+         "mood":  {"caffeine": "none"},
+         "budget": {"price": "3000_4500"}}
+    """
+    prefs = _flatten(answers or {})
+
+    # 응답이 없으면 인기순
+    if not prefs:
+        ranked = sorted(menu, key=lambda m: -m.get("popularity", 0))[:top_n]
+        return {"answered": [], "mode": "popular",
+                "results": [{"item": m, "score": None, "reasons": ["인기 메뉴"], "relaxed": False, "unmet": []}
+                            for m in ranked]}
+
+    max_total = sum(WEIGHTS[k] for k in prefs)
+    rows = []
+    for item in menu:
+        total, reasons, unmet = 0.0, [], []
+        for k, v in prefs.items():
+            s = _score_one(k, v, item)
+            total += WEIGHTS[k] * s
+            if s >= 0.99:
+                reasons.append(k)
+            elif k in STRICT and s < 0.5:
+                unmet.append(k)
+        rows.append({"item": item,
+                     "score": round(total / max_total * 100, 1),
+                     "reasons": reasons, "unmet": unmet, "relaxed": bool(unmet)})
+
+    tiebreak = lambda r: (-r["score"], -r["item"].get("popularity", 0))
+    strict_ok = sorted([r for r in rows if not r["unmet"]], key=tiebreak)
+    relaxed = sorted([r for r in rows if r["unmet"]], key=tiebreak)
+    results = (strict_ok + relaxed)[:top_n]
+    for r in results:
+        r["reasons"] = [REASON_TEXT[k] for k in r["reasons"]]
+        r["unmet"] = [REASON_TEXT[k] for k in r["unmet"]]
+    return {"answered": sorted(prefs.keys()), "mode": "personalized", "results": results}
+
+
+REASON_TEXT = {
+    "category": "원하는 음료 종류", "flavor": "선호하는 맛", "sweetness": "원하는 단맛 정도",
+    "temperature": "원하는 온도", "activity": "지금 하는 일에 어울림", "feeling": "현재 기분에 어울림",
+    "caffeine": "카페인 조건", "price": "예산 범위", "size": "원하는 사이즈",
+}
+
+
+# ======================= 화면 (Streamlit) =======================
+import streamlit as st
+
+TITLES = {"taste": "1. 취향 바탕", "mood": "2. 기분 바탕", "budget": "3. 구매 조건 바탕"}
+SZ = {"small": "작은", "medium": "보통", "large": "큰"}
+CAF = {"none": "없음", "low": "약간", "high": "많음"}
+TOTAL_Q = sum(len(s["questions"]) for s in SURVEY.values())
+
+
+def show_item(r_or_item, extra=""):
+    m = r_or_item
+    temps = "/".join("차가움" if t == "ice" else "따뜻함" for t in m["temps"])
+    sizes = "/".join(SZ[s] for s in m["sizes"])
+    st.markdown(f"**{m['name']}** {extra}")
+    st.caption(f"{CATEGORY_LABEL[m['category']]} · {m['price']:,}원 · {temps} · 카페인 {CAF[m['caffeine']]} · {sizes} 사이즈")
+
+
+st.set_page_config(page_title="음료 검색 · 추천", page_icon="☕")
+st.title("☕ 음료 검색 · 추천")
+tab_search, tab_rec = st.tabs(["🔍 검색", "✨ 추천"])
+
+with tab_search:
+    q = st.text_input("메뉴 이름이나 종류 (예: 라떼, 에이드, 차)", key="search_q")
+    found = search_menu(MENU, q)
+    if not found:
+        st.info("검색 결과가 없어요.")
+    for m in found:
+        show_item(m)
+        st.divider()
+
+with tab_rec:
+    st.caption(f"총 {TOTAL_Q}개 질문이에요. 전부 답하지 않아도, 원하는 것만 골라 추천받을 수 있어요.")
+    answers = {}
+    for sec_key, sec in SURVEY.items():
+        st.subheader(TITLES[sec_key])
+        answers[sec_key] = {}
+        for i, qd in enumerate(sec["questions"], 1):
+            labels = [o[1] for o in qd["options"]]
+            by_label = {o[1]: o[0] for o in qd["options"]}
+            key = f"ans_{qd['id']}"
+            title = f"Q{i}. {qd['text']}"
+            if qd["multi"]:
+                picked = st.multiselect(title + " (복수 선택 가능)", labels, key=key, placeholder="선택 안 해도 돼요")
+                if picked:
+                    answers[sec_key][qd["id"]] = [by_label[p] for p in picked]
+            else:
+                picked = st.radio(title, labels, index=None, key=key, horizontal=True)
+                if picked is not None:
+                    answers[sec_key][qd["id"]] = by_label[picked]
+        st.divider()
+
+    n_done = sum(len(v) for v in answers.values())
+    st.write(f"**{TOTAL_Q}문항 중 {n_done}문항 선택됨**")
+
+    def reset():
+        for sec in SURVEY.values():
+            for qd in sec["questions"]:
+                st.session_state.pop(f"ans_{qd['id']}", None)
+    c1, c2 = st.columns(2)
+    go = c1.button("추천받기", type="primary", use_container_width=True)
+    c2.button("초기화", on_click=reset, use_container_width=True)
+
+    if go:
+        res = recommend(MENU, answers, top_n=5)
+        if res["mode"] == "popular":
+            st.info("선택한 항목이 없어서 인기 메뉴를 보여드려요.")
+        for r in res["results"]:
+            score = "" if r["score"] is None else f"— {r['score']}점"
+            show_item(r["item"], score)
+            if r["reasons"]:
+                st.success("✔ " + ", ".join(r["reasons"]))
+            if r["unmet"]:
+                st.warning("※ 맞지 않는 조건: " + ", ".join(r["unmet"]))
+            st.divider()
